@@ -1,15 +1,16 @@
-from rest_framework import generics, status
+from rest_framework import generics, status, permissions
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 
-from .models import User
-from .serializers import UserSerializer
+from .models import User, Post
+from .serializers import UserSerializer, PostSerializer
 
 
-class UserList(generics.ListAPIView):
+class UsersList(generics.ListAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    name = 'user-list'
+    permission_classes = (permissions.IsAdminUser,)
+    name = 'users-list'
 
     def post(self, request):
         try:
@@ -27,4 +28,34 @@ class UserList(generics.ListAPIView):
 class UserDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    permission_classes = (permissions.IsAuthenticated,)
     name = 'user-detail'
+
+
+class PostsList(generics.ListCreateAPIView):
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer
+    name = 'posts-list'
+
+
+class PostDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer
+    name = 'post-detail'
+
+
+class PublicPostsList(generics.ListAPIView):
+    queryset = Post.objects.filter(public=True)
+    serializer_class = PostSerializer
+    name = 'public-posts-detail'
+
+
+class PrivatePostsList(generics.ListAPIView):
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    name = 'private-posts-detail'
+
+    def get(self, request):
+        posts = Post.objects.filter(public=false, user=request.user)
+        return Response(data=posts)
